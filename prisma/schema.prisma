@@ -1,0 +1,291 @@
+// Bailey's Bowen College - Result Management System
+// Database Schema with PostgreSQL
+
+generator client {
+  provider   = "prisma-client"
+  output     = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================
+// ENUMS
+// ============================================
+
+enum Role {
+  ADMIN
+  TEACHER
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+enum Term {
+  FIRST
+  SECOND
+  THIRD
+}
+
+enum Grade {
+  A
+  B
+  C
+  D
+  E
+  F
+}
+
+// ============================================
+// AUTHENTICATION & USERS
+// ============================================
+
+model User {
+  id            Int          @id @default(autoincrement())
+  email         String       @unique
+  name          String
+  password      String       // Hashed by Better-Auth
+  role          Role         @default(TEACHER)
+  image         String?
+  phoneNumber   String?
+  isActive      Boolean      @default(true)
+  
+  // Relations
+  classrooms    Classroom[]  // Teachers can have multiple classrooms
+  
+  // Audit
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  
+  @@index([email])
+  @@index([role])
+  @@map("users")
+}
+
+// ============================================
+// ACADEMIC STRUCTURE
+// ============================================
+
+model Classroom {
+  id            Int          @id @default(autoincrement())
+  name          String       // e.g., "S.S. 2", "JSS 3"
+  section       String?      // e.g., "A", "B" for multiple sections
+  session       String       // e.g., "2024/2025"
+  currentTerm   Term         @default(FIRST)
+  
+  // Teacher Assignment
+  teacherId     Int
+  teacher       User         @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  
+  // Relations
+  students      Student[]
+  
+  // Metadata
+  isActive      Boolean      @default(true)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  
+  @@unique([name, section, session]) // Prevent duplicate classes
+  @@index([teacherId])
+  @@index([session])
+  @@map("classrooms")
+}
+
+model Student {
+  id              Int          @id @default(autoincrement())
+  admissionNo     String       @unique
+  firstName       String
+  lastName        String
+  otherNames      String?
+  gender          Gender
+  dateOfBirth     DateTime?
+  image           String?      // URL to stored image
+  
+  // Classroom Assignment
+  classroomId     Int
+  classroom       Classroom    @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  
+  // Contact Info
+  guardianName    String?
+  guardianPhone   String?
+  address         String?
+  
+  // Relations
+  results         Result[]
+  
+  // Status
+  isActive        Boolean      @default(true)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  
+  @@index([classroomId])
+  @@index([admissionNo])
+  @@map("students")
+}
+
+// ============================================
+// RESULTS & GRADING
+// ============================================
+
+model Result {
+  id                  Int              @id @default(autoincrement())
+  
+  // Student & Term Info
+  studentId           Int
+  student             Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  term                Term
+  session             String           // e.g., "2024/2025"
+  
+  // Academic Performance
+  subjects            SubjectScore[]
+  
+  // Attendance
+  timesSchoolOpened   Int              @default(0)
+  timesPresent        Int              @default(0)
+  timesAbsent         Int              @default(0)
+  
+  // Comments & Ratings
+  teacherComment      String?
+  principalComment    String?
+  
+  // Psychomotor & Affective Ratings
+  psychomotorRatings  Json?            // Flexible JSON for various skills
+  affectiveDomain     Json?            // Behavioral traits
+  
+  // Performance Summary
+  totalScore          Float            @default(0)
+  averageScore        Float            @default(0)
+  classPosition       Int?
+  totalStudents       Int?
+  
+  // Metadata
+  isPublished         Boolean          @default(false)
+  publishedAt         DateTime?
+  
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+  createdBy           Int?             // User who created
+  
+  @@unique([studentId, term, session]) // One result per student per term
+  @@index([studentId])
+  @@index([term, session])
+  @@map("results")
+}
+
+model SubjectScore {
+  id              Int          @id @default(autoincrement())
+  
+  // Result Reference
+  resultId        Int
+  result          Result       @relation(fields: [resultId], references: [id], onDelete: Cascade)
+  
+  // Subject Info
+  subject         String       // e.g., "MATHEMATICS", "ENGLISH"
+  
+  // Scores (Based on template: CA out of 40, Exam out of 60)
+  caScore         Float        @default(0)   // Continuous Assessment
+  examScore       Float        @default(0)   // Examination
+  totalScore      Float        @default(0)   // Auto-calculated
+  
+  // Grading
+  grade           Grade?
+  remark          String?      // e.g., "EXCELLENT", "VERY GOOD"
+  
+  // Position in subject
+  classAverage    Float?
+  highestInClass  Float?
+  lowestInClass   Float?
+  
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  
+  @@unique([resultId, subject]) // One score per subject per result
+  @@index([resultId])
+  @@map("subject_scores")
+}
+
+// ============================================
+// SYSTEM CONFIGURATION
+// ============================================
+
+model Subject {
+  id              Int          @id @default(autoincrement())
+  name            String       @unique
+  code            String?      @unique
+  
+  // Grading Configuration
+  caMaxScore      Float        @default(40)
+  examMaxScore    Float        @default(60)
+  
+  isActive        Boolean      @default(true)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  
+  @@map("subjects")
+}
+
+model GradeScale {
+  id              Int          @id @default(autoincrement())
+  grade           Grade
+  minScore        Float
+  maxScore        Float
+  remark          String       // e.g., "EXCELLENT", "VERY GOOD"
+  
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  
+  @@unique([minScore, maxScore])
+  @@map("grade_scales")
+}
+
+model SchoolSettings {
+  id                  Int          @id @default(autoincrement())
+  
+  // School Information
+  schoolName          String       @default("Bailey's Bowen College")
+  schoolAddress       String?
+  schoolPhone         String?
+  schoolEmail         String?
+  schoolLogo          String?
+  
+  // Current Academic Info
+  currentSession      String       // e.g., "2024/2025"
+  currentTerm         Term         @default(FIRST)
+  
+  // Next Term Info
+  nextTermBegins      DateTime?
+  
+  // Result Configuration
+  passmark            Float        @default(50)
+  
+  updatedAt           DateTime     @updatedAt
+  
+  @@map("school_settings")
+}
+
+// ============================================
+// AUDIT & LOGS
+// ============================================
+
+model AuditLog {
+  id              Int          @id @default(autoincrement())
+  
+  userId          Int?
+  action          String       // e.g., "CREATE_RESULT", "UPDATE_SCORES"
+  entity          String       // e.g., "Result", "Student"
+  entityId        Int?
+  
+  changes         Json?        // Store before/after values
+  ipAddress       String?
+  userAgent       String?
+  
+  createdAt       DateTime     @default(now())
+  
+  @@index([userId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
