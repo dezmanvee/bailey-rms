@@ -3,7 +3,7 @@
 // ============================================
 
 import { z } from 'zod';
-import { Gender, Term, Role, Grade } from '@prisma/client';
+import { Gender, Term, Role } from '../../../generated/prisma/enums';
 import { CA_MAX_SCORE, EXAM_MAX_SCORE } from './grading';
 
 // ============================================
@@ -34,6 +34,7 @@ export const createStudentSchema = z.object({
   gender: z.nativeEnum(Gender),
   dateOfBirth: z.date().optional(),
   classroomId: z.number().int().positive(),
+  subjectIds: z.array(z.number().int().positive()).optional(),
   guardianName: z.string().optional(),
   guardianPhone: z.string().optional(),
   address: z.string().optional(),
@@ -82,8 +83,10 @@ export const createResultSchema = z.object({
   subjects: z.array(subjectScoreSchema).min(1, 'At least one subject required'),
   teacherComment: z.string().optional(),
   principalComment: z.string().optional(),
-  psychomotorRatings: z.record(z.number().int().min(1).max(5)).optional(),
-  affectiveDomain: z.record(z.string()).optional(),
+  psychomotorRatings: z
+    .record(z.string(), z.number().int().min(1).max(5))
+    .optional(),
+  affectiveDomain: z.record(z.string(), z.string()).optional(),
 });
 
 export const updateResultSchema = createResultSchema.partial().extend({

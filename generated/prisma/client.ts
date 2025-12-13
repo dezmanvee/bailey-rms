@@ -84,3 +84,23 @@ export type SchoolSettings = Prisma.SchoolSettingsModel
  * 
  */
 export type AuditLog = Prisma.AuditLogModel
+/**
+ * Model AuthUser
+ * 
+ */
+export type AuthUser = Prisma.AuthUserModel
+/**
+ * Model AuthSession
+ * 
+ */
+export type AuthSession = Prisma.AuthSessionModel
+/**
+ * Model AuthAccount
+ * 
+ */
+export type AuthAccount = Prisma.AuthAccountModel
+/**
+ * Model AuthVerification
+ * 
+ */
+export type AuthVerification = Prisma.AuthVerificationModel

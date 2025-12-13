@@ -21,6 +21,11 @@ import {
   calculateAverageScore,
   calculatePosition,
 } from '~/lib/utils/grading';
+import type { Prisma } from '../../../../generated/prisma';
+import type { createTRPCContext } from '../trpc';
+import { Term } from '../../../../generated/prisma/enums';
+
+type Ctx = Awaited<ReturnType<typeof createTRPCContext>>;
 
 export const resultRouter = createTRPCRouter({
   /**
@@ -29,11 +34,13 @@ export const resultRouter = createTRPCRouter({
   list: teacherProcedure
     .input(searchResultsSchema.optional())
     .query(async ({ ctx, input }) => {
-      const where: any = {
+      const where: Prisma.ResultWhereInput = {
         ...(input?.classroomId && {
           student: { classroomId: input.classroomId },
         }),
-        ...(input?.term && { term: input.term }),
+        ...(input?.term && {
+          term: { equals: input.term },
+        }),
         ...(input?.session && { session: input.session }),
         ...(input?.isPublished !== undefined && {
           isPublished: input.isPublished,
@@ -109,7 +116,7 @@ export const resultRouter = createTRPCRouter({
     .input(
       z.object({
         studentId: z.number().int().positive(),
-        term: z.enum(['FIRST', 'SECOND', 'THIRD']),
+        term: z.nativeEnum(Term),
         session: z.string(),
       })
     )
@@ -212,8 +219,8 @@ export const resultRouter = createTRPCRouter({
           timesAbsent: input.timesAbsent,
           teacherComment: input.teacherComment,
           principalComment: input.principalComment,
-          psychomotorRatings: input.psychomotorRatings,
-          affectiveDomain: input.affectiveDomain,
+          psychomotorRatings: input.psychomotorRatings as unknown as Prisma.InputJsonValue,
+          affectiveDomain: input.affectiveDomain as unknown as Prisma.InputJsonValue,
           totalScore,
           averageScore,
           createdBy: appUser?.id ?? null,
@@ -255,7 +262,7 @@ export const resultRouter = createTRPCRouter({
       }
 
       // If subjects are being updated, recalculate grades
-      let updateData: any = { ...data };
+      const updateData: Prisma.ResultUpdateInput = { ...data } as Prisma.ResultUpdateInput;
 
       if (subjects && subjects.length > 0) {
         const subjectsWithGrades = subjects.map((subject) => {
@@ -401,7 +408,7 @@ export const resultRouter = createTRPCRouter({
       // Grade distribution
       const gradeDistribution = results.reduce((acc, result) => {
         const { grade } = calculateGrade(result.averageScore);
-        acc[grade] = (acc[grade] || 0) + 1;
+        acc[grade] = (acc[grade] ?? 0) + 1;
         return acc;
       }, {} as Record<string, number>);
 
@@ -432,15 +439,15 @@ export const resultRouter = createTRPCRouter({
  * Helper function to update class positions
  */
 async function updateClassPositions(
-  ctx: any,
+  ctx: Ctx,
   classroomId: number,
-  term: string,
+  term: Term,
   session: string
 ) {
   const results = await ctx.db.result.findMany({
     where: {
       student: { classroomId },
-      term,
+      term: term,
       session,
     },
     select: {
@@ -449,7 +456,7 @@ async function updateClassPositions(
     },
   });
 
-  const allAverages = results.map((r: { averageScore: number }) => r.averageScore);
+  const allAverages = results.map((r) => r.averageScore);
   const totalStudents = results.length;
 
   for (const result of results) {
@@ -468,11 +475,14 @@ async function updateClassPositions(
 /**
  * Helper function to get subject analysis
  */
-async function getSubjectAnalysis(ctx: any, results: any[]) {
+async function getSubjectAnalysis(
+  ctx: Ctx,
+  results: Array<{ subjects: Array<{ subject: string; totalScore: number }> }>
+) {
   const subjectMap = new Map<string, number[]>();
 
   results.forEach((result) => {
-    result.subjects.forEach((subject: any) => {
+    result.subjects.forEach((subject) => {
       if (!subjectMap.has(subject.subject)) {
         subjectMap.set(subject.subject, []);
       }

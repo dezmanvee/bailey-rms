@@ -1,5 +1,6 @@
 import 'dotenv/config'
 import { PrismaClient, Role, Gender, Term, Grade } from "../generated/prisma";
+import { auth } from "../src/server/better-auth";
 import { PrismaPg } from "@prisma/adapter-pg";
 import { hash } from 'bcryptjs';
 
@@ -106,6 +107,13 @@ async function main() {
       phoneNumber: '08115414915',
     },
   });
+  try {
+    await auth.api.signUpEmail({
+      body: { email: admin.email, password: 'password123', name: admin.name },
+    });
+  } catch (e) {
+    console.warn('Better-Auth admin exists, skipping signUpEmail');
+  }
 
   const teacher1 = await prisma.user.create({
     data: {
@@ -116,6 +124,13 @@ async function main() {
       phoneNumber: '08012345678',
     },
   });
+  try {
+    await auth.api.signUpEmail({
+      body: { email: teacher1.email, password: 'password123', name: teacher1.name },
+    });
+  } catch (e) {
+    console.warn('Better-Auth teacher1 exists, skipping signUpEmail');
+  }
 
   const teacher2 = await prisma.user.create({
     data: {
@@ -126,6 +141,13 @@ async function main() {
       phoneNumber: '08098765432',
     },
   });
+  try {
+    await auth.api.signUpEmail({
+      body: { email: teacher2.email, password: 'password123', name: teacher2.name },
+    });
+  } catch (e) {
+    console.warn('Better-Auth teacher2 exists, skipping signUpEmail');
+  }
 
   // ============================================
   // CLASSROOMS

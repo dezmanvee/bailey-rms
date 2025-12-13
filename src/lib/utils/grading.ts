@@ -1,4 +1,4 @@
-import { Grade } from '@prisma/client';
+import { Grade } from '../../../generated/prisma/enums';
 
 // Grade scale configuration
 export const GRADE_SCALE = [

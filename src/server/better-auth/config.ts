@@ -10,7 +10,11 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
   },
+  user: { modelName: "AuthUser" },
+  account: { modelName: "AuthAccount" },
+  verification: { modelName: "AuthVerification" },
   session: {
+    modelName: "AuthSession",
     expiresIn: 60 * 60 * 24 * 7, // 7 days
     updateAge: 60 * 60 * 24, // 1 day
     cookieCache: {
@@ -23,8 +27,12 @@ export const auth = betterAuth({
   // },
   secret: env.BETTER_AUTH_SECRET!,
   baseURL:
-    (env as any).NEXT_PUBLIC_APP_URL ??
-    (env as any).BETTER_AUTH_URL ??
+    (typeof process.env.NEXT_PUBLIC_APP_URL === "string"
+      ? process.env.NEXT_PUBLIC_APP_URL
+      : undefined) ??
+    (typeof process.env.BETTER_AUTH_URL === "string"
+      ? process.env.BETTER_AUTH_URL
+      : undefined) ??
     `http://localhost:${process.env.PORT ?? 3000}`,
   // socialProviders: {
   //   github: {

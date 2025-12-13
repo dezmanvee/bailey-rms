@@ -1,8 +1,3 @@
-// ============================================
-// FILE: src/server/api/routers/student.ts
-// Student Management Router
-// ============================================
-
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import {
@@ -16,6 +11,7 @@ import {
   updateStudentSchema,
   searchStudentsSchema,
 } from '~/lib/utils/validation';
+import type { Prisma } from '../../../../generated/prisma';
 
 export const studentRouter = createTRPCRouter({
   /**
@@ -24,7 +20,7 @@ export const studentRouter = createTRPCRouter({
   list: teacherProcedure
     .input(searchStudentsSchema.optional())
     .query(async ({ ctx, input }) => {
-      const where: any = {
+      const where: Prisma.StudentWhereInput = {
         ...(input?.classroomId && { classroomId: input.classroomId }),
         ...(input?.gender && { gender: input.gender }),
         ...(input?.isActive !== undefined && { isActive: input.isActive }),
@@ -37,7 +33,7 @@ export const studentRouter = createTRPCRouter({
           { lastName: { contains: input.query, mode: 'insensitive' } },
           { otherNames: { contains: input.query, mode: 'insensitive' } },
           { admissionNo: { contains: input.query, mode: 'insensitive' } },
-        ];
+        ] as Prisma.StudentWhereInput['OR'];
       }
 
       const students = await ctx.db.student.findMany({
@@ -112,6 +108,9 @@ export const studentRouter = createTRPCRouter({
               },
             },
           },
+          subjects: {
+            include: { subject: true },
+          },
           results: {
             include: {
               subjects: true,
@@ -150,9 +149,25 @@ export const studentRouter = createTRPCRouter({
       }
 
       const student = await ctx.db.student.create({
-        data: input,
+        data: {
+          admissionNo: input.admissionNo,
+          firstName: input.firstName,
+          lastName: input.lastName,
+          otherNames: input.otherNames ?? null,
+          gender: input.gender,
+          dateOfBirth: input.dateOfBirth ?? null,
+          classroomId: input.classroomId,
+          guardianName: input.guardianName ?? null,
+          guardianPhone: input.guardianPhone ?? null,
+          address: input.address ?? null,
+          image: input.image ?? null,
+          subjects: input.subjectIds && input.subjectIds.length > 0 ? {
+            create: input.subjectIds.map((subjectId) => ({ subjectId })),
+          } : undefined,
+        },
         include: {
           classroom: true,
+          subjects: { include: { subject: true } },
         },
       });
 
@@ -245,7 +260,9 @@ export const studentRouter = createTRPCRouter({
         } catch (error) {
           results.failed++;
           results.errors.push(
-            `Failed to import ${studentData.admissionNo}: ${error}`
+            `Failed to import ${studentData.admissionNo}: ${
+              error instanceof Error ? error.message : String(error)
+            }`
           );
         }
       }

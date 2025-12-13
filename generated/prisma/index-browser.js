@@ -213,6 +213,13 @@ exports.Prisma.SubjectScalarFieldEnum = {
   updatedAt: 'updatedAt'
 };
 
+exports.Prisma.StudentSubjectScalarFieldEnum = {
+  id: 'id',
+  studentId: 'studentId',
+  subjectId: 'subjectId',
+  createdAt: 'createdAt'
+};
+
 exports.Prisma.GradeScaleScalarFieldEnum = {
   id: 'id',
   grade: 'grade',
@@ -247,6 +254,52 @@ exports.Prisma.AuditLogScalarFieldEnum = {
   ipAddress: 'ipAddress',
   userAgent: 'userAgent',
   createdAt: 'createdAt'
+};
+
+exports.Prisma.AuthUserScalarFieldEnum = {
+  id: 'id',
+  name: 'name',
+  email: 'email',
+  emailVerified: 'emailVerified',
+  image: 'image',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.AuthSessionScalarFieldEnum = {
+  id: 'id',
+  expiresAt: 'expiresAt',
+  token: 'token',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt',
+  ipAddress: 'ipAddress',
+  userAgent: 'userAgent',
+  userId: 'userId'
+};
+
+exports.Prisma.AuthAccountScalarFieldEnum = {
+  id: 'id',
+  accountId: 'accountId',
+  providerId: 'providerId',
+  userId: 'userId',
+  accessToken: 'accessToken',
+  refreshToken: 'refreshToken',
+  idToken: 'idToken',
+  accessTokenExpiresAt: 'accessTokenExpiresAt',
+  refreshTokenExpiresAt: 'refreshTokenExpiresAt',
+  scope: 'scope',
+  password: 'password',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+};
+
+exports.Prisma.AuthVerificationScalarFieldEnum = {
+  id: 'id',
+  identifier: 'identifier',
+  value: 'value',
+  expiresAt: 'expiresAt',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
 };
 
 exports.Prisma.SortOrder = {
@@ -306,9 +359,14 @@ exports.Prisma.ModelName = {
   Result: 'Result',
   SubjectScore: 'SubjectScore',
   Subject: 'Subject',
+  StudentSubject: 'StudentSubject',
   GradeScale: 'GradeScale',
   SchoolSettings: 'SchoolSettings',
-  AuditLog: 'AuditLog'
+  AuditLog: 'AuditLog',
+  AuthUser: 'AuthUser',
+  AuthSession: 'AuthSession',
+  AuthAccount: 'AuthAccount',
+  AuthVerification: 'AuthVerification'
 };
 
 /**

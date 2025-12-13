@@ -2,8 +2,9 @@
 // Database Schema with PostgreSQL
 
 generator client {
-  provider   = "prisma-client"
+  provider   = "prisma-client-js"
   output     = "../generated/prisma"
+  engineType = "library"
 }
 
 datasource db {
@@ -115,6 +116,7 @@ model Student {
   
   // Relations
   results         Result[]
+  subjects        StudentSubject[]
   
   // Status
   isActive        Boolean      @default(true)
@@ -224,10 +226,23 @@ model Subject {
   isActive        Boolean      @default(true)
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
+  students        StudentSubject[]
   
   @@map("subjects")
 }
 
+model StudentSubject {
+  id         Int      @id @default(autoincrement())
+  studentId  Int
+  subjectId  Int
+  student    Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subject    Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+  @@unique([studentId, subjectId])
+  @@index([studentId])
+  @@index([subjectId])
+  @@map("student_subjects")
+}
 model GradeScale {
   id              Int          @id @default(autoincrement())
   grade           Grade
@@ -273,19 +288,81 @@ model SchoolSettings {
 
 model AuditLog {
   id              Int          @id @default(autoincrement())
-  
+
   userId          Int?
   action          String       // e.g., "CREATE_RESULT", "UPDATE_SCORES"
   entity          String       // e.g., "Result", "Student"
   entityId        Int?
-  
+
   changes         Json?        // Store before/after values
   ipAddress       String?
   userAgent       String?
-  
+
   createdAt       DateTime     @default(now())
-  
+
   @@index([userId])
   @@index([createdAt])
   @@map("audit_logs")
+}
+
+// ============================================
+// Better Auth schema
+// ============================================
+
+model AuthUser {
+  id            String       @id
+  name          String
+  email         String       @unique
+  emailVerified Boolean
+  image         String?
+  createdAt     DateTime
+  updatedAt     DateTime
+  sessions      AuthSession[]
+  accounts      AuthAccount[]
+
+  @@map("auth_users")
+}
+
+model AuthSession {
+  id        String   @id
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime
+  updatedAt DateTime
+  ipAddress String?
+  userAgent String?
+  userId    String
+  user      AuthUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("auth_sessions")
+}
+
+model AuthAccount {
+  id                    String    @id
+  accountId             String
+  providerId            String
+  userId                String
+  user                  AuthUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime
+  updatedAt             DateTime
+
+  @@map("auth_accounts")
+}
+
+model AuthVerification {
+  id         String   @id
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime?
+  updatedAt  DateTime?
+
+  @@map("auth_verifications")
 }
