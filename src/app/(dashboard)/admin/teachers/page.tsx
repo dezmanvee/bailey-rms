@@ -6,6 +6,7 @@ import { Users, UserPlus, School } from "lucide-react";
 import { Input } from "~/components/ui/input";
 import { Label } from "~/components/ui/label";
 import { Button } from "~/components/ui/button";
+import { Avatar, AvatarImage, AvatarFallback } from "~/components/ui/avatar";
 import {
   Select,
   SelectContent,
@@ -15,12 +16,42 @@ import {
 } from "~/components/ui/select";
 import { useToast } from "~/hooks/use-toast";
 import { Term } from "../../../../../generated/prisma/enums";
+import {
+  Table,
+  TableHeader,
+  TableRow,
+  TableHead,
+  TableBody,
+  TableCell,
+} from "~/components/ui/table";
+import {
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "~/components/ui/dialog";
 
 export default function TeachersPage() {
   const { toast } = useToast();
   const createTeacher = api.auth.createTeacher.useMutation();
   const createClassroom = api.classroom.create.useMutation();
   const { data: classrooms } = api.classroom.list.useQuery();
+  const { data: teachers, refetch: refetchTeachers } =
+    api.auth.listTeachers.useQuery();
+  const updateTeacher = api.auth.updateTeacher.useMutation({
+    onSuccess: () => {
+      toast({ title: "Updated", description: "Teacher updated" });
+      refetchTeachers();
+    },
+  });
+  const deleteTeacher = api.auth.deleteTeacher.useMutation({
+    onSuccess: () => {
+      toast({ title: "Deleted", description: "Teacher deactivated" });
+      refetchTeachers();
+    },
+  });
 
   const [teacherName, setTeacherName] = useState("");
   const [teacherEmail, setTeacherEmail] = useState("");
@@ -72,7 +103,7 @@ export default function TeachersPage() {
   };
 
   return (
-    <div className="grid gap-8 lg:grid-cols-2">
+    <div className="grid gap-8">
       <div className="rounded-2xl border-2 border-gray-200 bg-white p-6">
         <div className="mb-6 flex items-center gap-3">
           <UserPlus className="h-6 w-6 text-gray-500" />
@@ -178,6 +209,137 @@ export default function TeachersPage() {
         >
           Create Teacher & Classroom
         </Button>
+      </div>
+
+      <div className="rounded-2xl border-2 border-gray-200 bg-white p-6">
+        <div className="mb-6 flex items-center gap-3">
+          <Users className="h-6 w-6 text-gray-500" />
+          <h3 className="text-lg font-semibold text-gray-900">Teachers</h3>
+        </div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Image</TableHead>
+              <TableHead>Name</TableHead>
+              <TableHead>Email</TableHead>
+              <TableHead>Class</TableHead>
+              <TableHead>Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {(teachers ?? []).map((t) => {
+              const mainClass =
+                t.classrooms && t.classrooms.length > 0
+                  ? `${t.classrooms[0]?.name}${t.classrooms[0]?.section ? ` (${t.classrooms[0].section})` : ""} • ${t.classrooms[0]?.session}`
+                  : "—";
+              return (
+                <TableRow key={t.id}>
+                  <TableCell>
+                    <Avatar>
+                      <AvatarImage src={t.image ?? undefined} />
+                      <AvatarFallback>
+                        {t.name?.slice(0, 2).toUpperCase() ?? "TT"}
+                      </AvatarFallback>
+                    </Avatar>
+                  </TableCell>
+                  <TableCell>{t.name}</TableCell>
+                  <TableCell>{t.email}</TableCell>
+                  <TableCell>{mainClass}</TableCell>
+                  <TableCell>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" className="mr-2">
+                          Edit
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>Edit Teacher</DialogTitle>
+                        </DialogHeader>
+                        <div className="space-y-4">
+                          <div>
+                            <Label>Name</Label>
+                            <Input
+                              defaultValue={t.name ?? ""}
+                              onChange={(e) =>
+                                ((t as any).__editName = e.target.value)
+                              }
+                            />
+                          </div>
+                          <div>
+                            <Label>Email</Label>
+                            <Input
+                              type="email"
+                              defaultValue={t.email ?? ""}
+                              onChange={(e) =>
+                                ((t as any).__editEmail = e.target.value)
+                              }
+                            />
+                          </div>
+                          <div>
+                            <Label>Phone</Label>
+                            <Input
+                              defaultValue={t.phoneNumber ?? ""}
+                              onChange={(e) =>
+                                ((t as any).__editPhone = e.target.value)
+                              }
+                            />
+                          </div>
+                          <div>
+                            <Label>Image URL</Label>
+                            <Input
+                              defaultValue={t.image ?? ""}
+                              onChange={(e) =>
+                                ((t as any).__editImage = e.target.value)
+                              }
+                            />
+                          </div>
+                        </div>
+                        <DialogFooter>
+                          <Button
+                            onClick={async () => {
+                              await updateTeacher.mutateAsync({
+                                id: t.id,
+                                name:
+                                  (t as any).__editName !== undefined
+                                    ? (t as any).__editName
+                                    : t.name,
+                                email:
+                                  (t as any).__editEmail !== undefined
+                                    ? (t as any).__editEmail
+                                    : t.email,
+                                phoneNumber:
+                                  (t as any).__editPhone !== undefined
+                                    ? (t as any).__editPhone
+                                    : t.phoneNumber,
+                                image:
+                                  (t as any).__editImage !== undefined
+                                    ? (t as any).__editImage
+                                    : (t.image ?? undefined),
+                              });
+                            }}
+                            className="bg-gradient-oxblood text-white"
+                          >
+                            Save
+                          </Button>
+                        </DialogFooter>
+                      </DialogContent>
+                    </Dialog>
+                    <Button
+                      variant="destructive"
+                      onClick={async () => {
+                        await deleteTeacher.mutateAsync({ id: t.id });
+                      }}
+                      className="ml-2"
+                    >
+                      Delete
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
       </div>
     </div>
   );

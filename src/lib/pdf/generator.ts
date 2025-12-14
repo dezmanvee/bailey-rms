@@ -44,8 +44,6 @@ export async function generateReportCard(result: StudentResult): Promise<void> {
   const pageHeight = doc.internal.pageSize.getHeight();
 
   // Colors (Oxblood theme)
-  const oxblood: [number, number, number] = [128, 0, 32];
-  const darkOxblood: [number, number, number] = [92, 0, 21];
   const termLabelMap: Record<string, string> = {
     FIRST: 'First Term',
     SECOND: 'Second Term',
@@ -53,36 +51,30 @@ export async function generateReportCard(result: StudentResult): Promise<void> {
   };
   const termLabel = termLabelMap[result.term] ?? result.term;
 
-  // Header - School Name
-  doc.setFillColor(...oxblood);
-  doc.rect(0, 0, pageWidth, 30, 'F');
-  
-  doc.setTextColor(255, 255, 255);
-  doc.setFontSize(20);
+  doc.setTextColor(0, 0, 0);
+  doc.setFontSize(22);
   doc.setFont('helvetica', 'bold');
   doc.text("BAILEY'S BOWEN COLLEGE", pageWidth / 2, 12, { align: 'center' });
-  
-  doc.setFontSize(10);
   doc.setFont('helvetica', 'normal');
-  doc.text('No 14 Davis Cole Crescent, Pineville Estate, Surulere, Lagos State', pageWidth / 2, 18, { align: 'center' });
-  doc.text('TEL: 08115414915, 07034552256 • Email: baileysbowencollege@gmail.com', pageWidth / 2, 24, { align: 'center' });
+  doc.setFontSize(9);
+  doc.text('No 14 Davis Cole Crescent, Pineville Estate, Surulere, Lagos State', pageWidth / 2, 17, { align: 'center' });
+  doc.text('TEL: 08115414915, 07034552256   Email: baileysbowencollege@gmail.com', pageWidth / 2, 22, { align: 'center' });
+  doc.setDrawColor(0, 0, 0);
+  doc.setLineWidth(0.3);
+  doc.line(10, 26, pageWidth - 10, 26);
 
-  // Reset text color
-  doc.setTextColor(0, 0, 0);
-
-  // Student Info Section
-  let yPos = 40;
+  let yPos = 33;
   
   doc.setFontSize(16);
   doc.setFont('helvetica', 'bold');
-  doc.text(`${termLabel.toUpperCase()} STUDENT'S PERFORMANCE REPORT`, pageWidth / 2, yPos, { align: 'center' });
+  doc.text(`${termLabel.toUpperCase()} STUDENTS PERFORMANCE REPORT`, pageWidth / 2, yPos, { align: 'center' });
   
   yPos += 10;
   
   // Student Details Box
-  doc.setDrawColor(...oxblood);
+  doc.setDrawColor(0, 0, 0);
   doc.setLineWidth(0.5);
-  doc.rect(15, yPos, pageWidth - 30, 25);
+  doc.rect(15, yPos, pageWidth - 30, 20);
   
   yPos += 6;
   doc.setFontSize(10);
@@ -104,78 +96,96 @@ export async function generateReportCard(result: StudentResult): Promise<void> {
   yPos += 10;
 
   // Cognitive Domain - Subjects Table
-  doc.setFontSize(12);
+  doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
-  doc.text('COGNITIVE DOMAIN', 15, yPos);
+  doc.text('COGNITIVE DOMAIN', 10, yPos);
   
+  const rightStartY = yPos;
   yPos += 2;
-
+  
+  const marginLeft = 10;
+  const marginRight = 10;
+  const rightColumnWidth = 60;
+  const columnGap = 4;
+  const rightX = pageWidth - marginRight - rightColumnWidth;
+  const leftColWidth = rightX - marginLeft - columnGap;
   const subjectTableData = result.subjects.map((subject) => [
     subject.subject,
-    subject.caScore.toFixed(1),
-    subject.examScore.toFixed(1),
-    subject.totalScore.toFixed(1),
+    subject.caScore.toFixed(0),
+    subject.examScore.toFixed(0),
+    subject.totalScore.toFixed(0),
     subject.grade,
     subject.remark,
   ]);
 
   autoTable(doc, {
     startY: yPos,
-    head: [['SUBJECTS', 'CA (40)', 'EXAM (60)', 'TOTAL (100)', 'GRADE', 'REMARK']],
+    head: [['SUBJECTS', 'CA', 'EXAM', 'TOTAL', 'GRADE', 'REMARKS']],
     body: subjectTableData,
-    theme: 'striped',
+    theme: 'grid',
     headStyles: {
-      fillColor: oxblood,
-      textColor: [255, 255, 255],
+      fillColor: [230, 230, 230],
+      textColor: [0, 0, 0],
       fontStyle: 'bold',
-      fontSize: 9,
-    },
-    bodyStyles: {
       fontSize: 8,
     },
-    columnStyles: {
-      0: { cellWidth: 60 },
-      1: { cellWidth: 20, halign: 'center' },
-      2: { cellWidth: 20, halign: 'center' },
-      3: { cellWidth: 25, halign: 'center' },
-      4: { cellWidth: 20, halign: 'center' },
-      5: { cellWidth: 30, halign: 'center' },
+    bodyStyles: {
+      fontSize: 7,
     },
-    margin: { left: 15, right: 15 },
+    styles: { cellPadding: 1, lineWidth: 0.2 },
+    columnStyles: {
+      0: { cellWidth: leftColWidth - (12 + 14 + 16 + 14 + 24) },
+      1: { cellWidth: 12, halign: 'center' },
+      2: { cellWidth: 14, halign: 'center' },
+      3: { cellWidth: 16, halign: 'center' },
+      4: { cellWidth: 14, halign: 'center' },
+      5: { cellWidth: 24, halign: 'center' },
+    },
+    margin: { left: marginLeft, right: marginRight + rightColumnWidth + columnGap },
   });
 
   yPos =
     ((doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ??
       yPos) + 10;
 
-  // Performance Summary
-  doc.setFillColor(240, 240, 240);
-  doc.rect(15, yPos, pageWidth - 30, 20, 'F');
-  doc.setDrawColor(...oxblood);
-  doc.rect(15, yPos, pageWidth - 30, 20);
-
-  yPos += 7;
+  // Performance Summary (grid)
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
-  doc.text('PERFORMANCE SUMMARY', 20, yPos);
-  
-  yPos += 6;
-  doc.setFont('helvetica', 'normal');
-  doc.text(`Total Obtained: ${result.subjects.reduce((sum, s) => sum + s.totalScore, 0).toFixed(1)}`, 20, yPos);
-  doc.text(`Total Obtainable: ${result.subjects.length * 100}`, 70, yPos);
-  doc.text(`Average: ${result.averageScore.toFixed(1)}%`, 120, yPos);
-  doc.text(`Position: ${result.classPosition ?? '--'}${result.totalStudents ? `/${result.totalStudents}` : ''}`, 160, yPos);
-
-  yPos += 12;
+  doc.text('PERFORMANCE SUMMARY', marginLeft + 5, yPos);
+  const perfStartY = yPos + 2;
+  const totalObtained = result.subjects.reduce((sum, s) => sum + s.totalScore, 0).toFixed(1);
+  const totalObtainable = (result.subjects.length * 100).toString();
+  const averagePct = `${result.averageScore.toFixed(1)}%`;
+  const positionTxt = `${result.classPosition ?? '--'}${result.totalStudents ? `/${result.totalStudents}` : ''}`;
+  autoTable(doc, {
+    startY: perfStartY,
+    head: [['Total Obtained', 'Total Obtainable', 'Average', 'Position']],
+    body: [[totalObtained, totalObtainable, averagePct, positionTxt]],
+    theme: 'grid',
+    headStyles: { fillColor: [240, 240, 240], textColor: [0, 0, 0], fontSize: 8 },
+    bodyStyles: { fontSize: 8, halign: 'center' },
+    styles: { cellPadding: 1, lineWidth: 0.2 },
+    margin: { left: marginLeft, right: marginRight + rightColumnWidth + columnGap },
+    tableWidth: leftColWidth,
+    columnStyles: {
+      0: { cellWidth: leftColWidth / 4 },
+      1: { cellWidth: leftColWidth / 4 },
+      2: { cellWidth: leftColWidth / 4 },
+      3: { cellWidth: leftColWidth / 4 },
+    },
+  });
+  yPos =
+    ((doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ??
+      perfStartY) + 6;
 
   // Attendance
   doc.setFontSize(11);
   doc.setFont('helvetica', 'bold');
-  doc.text('ATTENDANCE SUMMARY', 15, yPos);
+  doc.text('ATTENDANCE SUMMARY', rightX, rightStartY);
   
-  yPos += 2;
+  let rightY = rightStartY + 2;
   autoTable(doc, {
-    startY: yPos,
+    startY: rightY,
     head: [['No of Times School Opened', 'No of Times Present', 'No of Times Absent']],
     body: [[
       result.timesSchoolOpened.toString(),
@@ -184,139 +194,153 @@ export async function generateReportCard(result: StudentResult): Promise<void> {
     ]],
     theme: 'grid',
     headStyles: {
-      fillColor: oxblood,
-      textColor: [255, 255, 255],
-      fontSize: 9,
+      fillColor: [230, 230, 230],
+      textColor: [0, 0, 0],
+      fontSize: 8,
     },
     bodyStyles: {
-      fontSize: 9,
+      fontSize: 7,
       halign: 'center',
     },
-    margin: { left: 15, right: 15 },
+    margin: { left: rightX, right: 10 },
+    columnStyles: { 0: { cellWidth: 20 }, 1: { cellWidth: 20 }, 2: { cellWidth: 20 } },
   });
 
-  yPos =
+  rightY =
     ((doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ??
-      yPos) + 8;
+      rightY) + 4;
 
-  // Psychomotor & Affective Domain (side by side)
-  const psychomotorX = 15;
-  const affectiveX = pageWidth / 2 + 5;
-  const boxWidth = (pageWidth - 30) / 2 - 5;
-
-  // Psychomotor
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
-  doc.text('PSYCHOMOTOR DOMAIN', psychomotorX, yPos);
-  
-  yPos += 2;
-  
-  const psychomotorData = result.psychomotorRatings 
+  doc.text('AFFECTIVE DOMAIN', rightX, rightY);
+  rightY += 2;
+  const affectiveData = result.affectiveDomain
+    ? Object.entries(result.affectiveDomain)
+        .map(([key, value]) => [key.replace(/([A-Z])/g, ' $1').trim(), value === 'tick' ? '✓' : ''])
+    : [];
+  autoTable(doc, {
+    startY: rightY,
+    head: [['Trait', 'Mark']],
+    body: affectiveData,
+    theme: 'grid',
+    headStyles: { fillColor: [230, 230, 230], textColor: [0, 0, 0], fontSize: 8 },
+    bodyStyles: { fontSize: 7, halign: 'center' },
+    styles: { cellPadding: 1, lineWidth: 0.2 },
+    margin: { left: rightX, right: 10 },
+    columnStyles: { 0: { cellWidth: 45 }, 1: { cellWidth: 15 } },
+  });
+  rightY =
+    ((doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? rightY) + 4;
+  doc.setFont('helvetica', 'bold');
+  doc.text('PSYCHOMOTOR DOMAIN', rightX, rightY);
+  rightY += 2;
+  const psychomotorData = result.psychomotorRatings
     ? Object.entries(result.psychomotorRatings).map(([key, value]) => [
         key.replace(/([A-Z])/g, ' $1').trim(),
         value.toString(),
       ])
     : [];
+  autoTable(doc, {
+    startY: rightY,
+    head: [['Skill', 'Rating']],
+    body: psychomotorData,
+    theme: 'grid',
+    headStyles: { fillColor: [230, 230, 230], textColor: [0, 0, 0], fontSize: 8 },
+    bodyStyles: { fontSize: 7, halign: 'center' },
+    styles: { cellPadding: 1, lineWidth: 0.2 },
+    margin: { left: rightX, right: 10 },
+    columnStyles: { 0: { cellWidth: 45 }, 1: { cellWidth: 15 } },
+  });
 
-  if (psychomotorData.length > 0) {
-    autoTable(doc, {
-      startY: yPos,
-      head: [['Skill', 'Rating (1-5)']],
-      body: psychomotorData,
-      theme: 'grid',
-      headStyles: {
-        fillColor: oxblood,
-        textColor: [255, 255, 255],
-        fontSize: 8,
-      },
-      bodyStyles: {
-        fontSize: 7,
-      },
-      columnStyles: {
-        0: { cellWidth: boxWidth - 20 },
-        1: { cellWidth: 20, halign: 'center' },
-      },
-      margin: { left: psychomotorX, right: pageWidth - psychomotorX - boxWidth },
-    });
-  }
+  const gradeScaleStartY = yPos + 4;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(10);
+  doc.text('GRADE SCALE', marginLeft + 5, gradeScaleStartY);
+  autoTable(doc, {
+    startY: gradeScaleStartY + 2,
+    head: [['70-100% (EXCELLENT)', '60-69% (VERY GOOD)', '50-59% (GOOD)', '45-49% (FAIR)', '40-44% (WEAK)', '0-39% (POOR)']],
+    body: [[]],
+    theme: 'grid',
+    headStyles: { fillColor: [245, 245, 245], textColor: [0, 0, 0], fontSize: 8 },
+    bodyStyles: { fontSize: 7 },
+    styles: { cellPadding: 1, lineWidth: 0.2 },
+    margin: { left: marginLeft, right: marginRight + rightColumnWidth + columnGap },
+    tableWidth: leftColWidth,
+  });
+  const gradeScaleFinalY =
+    ((doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? gradeScaleStartY) + 4;
+  doc.setFont('helvetica', 'bold');
+  doc.text('BADGE ANALYSIS', marginLeft + 5, gradeScaleFinalY);
+  const gradeCounts: Record<string, number> = { A: 0, B: 0, C: 0, D: 0, E: 0, F: 0 };
+  result.subjects.forEach((s) => {
+    const g = (s.grade || '').trim().charAt(0).toUpperCase();
+    if (gradeCounts[g] !== undefined) gradeCounts[g]++;
+  });
+  autoTable(doc, {
+    startY: gradeScaleFinalY + 2,
+    head: [['A', 'B', 'C', 'D', 'E', 'F', 'TOTAL SUBJECTS OFFERED']],
+    body: [[
+      gradeCounts.A,
+      gradeCounts.B,
+      gradeCounts.C,
+      gradeCounts.D,
+      gradeCounts.E,
+      gradeCounts.F,
+      result.subjects.length
+    ].map(v => v ?? 0)],
+    theme: 'grid',
+    headStyles: { fillColor: [230, 230, 230], textColor: [0, 0, 0], fontSize: 8 },
+    bodyStyles: { fontSize: 7, halign: 'center' },
+    styles: { cellPadding: 1, lineWidth: 0.2 },
+    margin: { left: marginLeft, right: marginRight + rightColumnWidth + columnGap },
+    tableWidth: leftColWidth,
+  });
+  yPos =
+    ((doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? gradeScaleFinalY) + 6;
 
-  // Affective Domain
+  // Comments (start after whichever column is longer)
+  const commentsStartY =
+    Math.max(yPos, (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? yPos) + 6;
+  yPos = commentsStartY;
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
-  doc.text('AFFECTIVE DOMAIN', affectiveX, yPos);
-  
-  yPos += 2;
-  
-  const affectiveData = result.affectiveDomain
-    ? Object.entries(result.affectiveDomain)
-        .filter(([, value]) => value === 'tick')
-        .map(([key]) => [key.replace(/([A-Z])/g, ' $1').trim(), '✓'])
-    : [];
-
-  if (affectiveData.length > 0) {
-    autoTable(doc, {
-      startY: yPos,
-      head: [['Trait', 'Status']],
-      body: affectiveData,
-      theme: 'grid',
-      headStyles: {
-        fillColor: oxblood,
-        textColor: [255, 255, 255],
-        fontSize: 8,
-      },
-      bodyStyles: {
-        fontSize: 7,
-      },
-      columnStyles: {
-        0: { cellWidth: boxWidth - 20 },
-        1: { cellWidth: 20, halign: 'center' },
-      },
-      margin: { left: affectiveX, right: 15 },
-    });
-  }
-
-  // Move to bottom of page for comments
-  yPos = pageHeight - 50;
-
-  // Comments
-  doc.setFontSize(10);
-  doc.setFont('helvetica', 'bold');
-  doc.text("Teacher's Comment:", 15, yPos);
-  
+  doc.text("Teacher's Remark:", 15, yPos);
   yPos += 5;
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   const teacherCommentLines = doc.splitTextToSize(
-    result.teacherComment ?? 'No comment provided',
+    result.teacherComment ?? '',
     pageWidth - 30
-  );
+  ) as string[];
   doc.text(teacherCommentLines, 15, yPos);
 
   yPos += teacherCommentLines.length * 5 + 5;
 
   doc.setFont('helvetica', 'bold');
   doc.setFontSize(10);
-  doc.text("Principal's Comment:", 15, yPos);
+  doc.text("Principal's Remark:", 15, yPos);
   
   yPos += 5;
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
   const principalCommentLines = doc.splitTextToSize(
-    result.principalComment ?? 'No comment provided',
+    result.principalComment ?? '',
     pageWidth - 30
-  );
+  ) as string[];
   doc.text(principalCommentLines, 15, yPos);
 
   // Footer
   yPos = pageHeight - 15;
-  doc.setDrawColor(...oxblood);
+  doc.setDrawColor(0, 0, 0);
   doc.line(15, yPos, pageWidth - 15, yPos);
   
   yPos += 5;
   doc.setFontSize(8);
   doc.setTextColor(100, 100, 100);
-  doc.text('Next Term Begins: _________________', 15, yPos);
-  doc.text('BAILEY\'S BOWEN MARK © 2019', pageWidth - 15, yPos, { align: 'right' });
+  doc.text('Next Term Begins:', 15, yPos);
+  doc.line(50, yPos, 110, yPos);
+  doc.text('Date:', pageWidth - 45, yPos);
+  doc.line(pageWidth - 35, yPos, pageWidth - 15, yPos);
 
   // Save PDF
   const fileName = `${result.student.admissionNo}_${result.student.lastName}_${result.term}_${result.session}.pdf`;

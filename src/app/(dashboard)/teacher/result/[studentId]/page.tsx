@@ -13,33 +13,13 @@ import { api } from "~/trpc/react";
 import { Loader2, Save, FileText, ArrowLeft, AlertCircle } from "lucide-react";
 import { useToast } from "~/hooks/use-toast";
 import { formatStudentName } from "~/lib/utils/formatters";
+import { generateReportCard } from "~/lib/pdf/generator";
 
 interface SubjectScore {
   subject: string;
   caScore: number;
   examScore: number;
 }
-
-const AVAILABLE_SUBJECTS = [
-  "ENGLISH LANGUAGE",
-  "MATHEMATICS",
-  "AGRICULTURAL SCIENCE",
-  "BIOLOGY",
-  "CATERING CRAFTS",
-  "CHEMISTRY",
-  "CIVIC EDUCATION",
-  "COMPUTER",
-  "DATA PROCESSING",
-  "ECONOMICS",
-  "FINANCIAL ACCOUNTING",
-  "FOOD & NUTRITION",
-  "FURTHER MATHEMATICS",
-  "GOVERNMENT",
-  "LITERATURE IN ENGLISH",
-  "PHYSICS",
-  "TECHNICAL DRAWING",
-  "YORUBA",
-];
 
 export default function ResultEntryPage() {
   const router = useRouter();
@@ -48,13 +28,7 @@ export default function ResultEntryPage() {
   const studentId = Number(params?.studentId as string);
 
   // State
-  const [subjects, setSubjects] = useState<SubjectScore[]>(
-    AVAILABLE_SUBJECTS.slice(0, 14).map((subject) => ({
-      subject,
-      caScore: 0,
-      examScore: 0,
-    })),
-  );
+  const [subjects, setSubjects] = useState<SubjectScore[]>([]);
   const [timesSchoolOpened, setTimesSchoolOpened] = useState(110);
   const [timesPresent, setTimesPresent] = useState(110);
   const [teacherComment, setTeacherComment] = useState("");
@@ -72,70 +46,60 @@ export default function ResultEntryPage() {
   const { data: user } = api.auth.getCurrentUser.useQuery();
 
   // Check if result already exists
-  const { data: existingResult } = api.result.getByStudentAndTerm.useQuery(
-    {
-      studentId,
-      term: "FIRST",
-      session: "2024/2025",
-    },
-    { enabled: !!studentId },
-  );
+  const classroomTerm = student?.classroom?.currentTerm;
+  const classroomSession = student?.classroom?.session;
+  const { data: existingResult, refetch: refetchExistingResult } =
+    api.result.getByStudentAndTerm.useQuery(
+      {
+        studentId,
+        term: classroomTerm!,
+        session: classroomSession!,
+      },
+      { enabled: !!studentId && !!classroomTerm && !!classroomSession },
+    );
 
   // Load existing result data
   useEffect(() => {
+    if (!student) return;
+    const registered = (student.subjects ?? []).map((ss) => ss.subject.name);
     if (existingResult) {
       setTimesSchoolOpened(existingResult.timesSchoolOpened);
       setTimesPresent(existingResult.timesPresent);
       setTeacherComment(existingResult.teacherComment || "");
       setPsychomotorRatings((existingResult.psychomotorRatings as any) || {});
       setAffectiveDomain((existingResult.affectiveDomain as any) || {});
-
-      if (existingResult.subjects && existingResult.subjects.length > 0) {
-        setSubjects(
-          existingResult.subjects.map((s) => ({
+      const existingMap = new Map(
+        (existingResult.subjects ?? []).map((s) => [
+          s.subject,
+          { subject: s.subject, caScore: s.caScore, examScore: s.examScore },
+        ]),
+      );
+      const merged: SubjectScore[] = [];
+      registered.forEach((name) => {
+        const ex = existingMap.get(name);
+        merged.push(ex ?? { subject: name, caScore: 0, examScore: 0 });
+      });
+      (existingResult.subjects ?? []).forEach((s) => {
+        if (!registered.includes(s.subject)) {
+          merged.push({
             subject: s.subject,
             caScore: s.caScore,
             examScore: s.examScore,
-          })),
-        );
-      }
+          });
+        }
+      });
+      setSubjects(merged);
+    } else {
+      setSubjects(
+        registered.map((name) => ({ subject: name, caScore: 0, examScore: 0 })),
+      );
     }
-  }, [existingResult]);
+  }, [student, existingResult]);
 
   // Mutations
-  const createResult = api.result.create.useMutation({
-    onSuccess: () => {
-      toast({
-        title: "Success!",
-        description: "Result saved successfully",
-      });
-      router.push("/teacher/classroom");
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
+  const createResult = api.result.create.useMutation();
 
-  const updateResult = api.result.update.useMutation({
-    onSuccess: () => {
-      toast({
-        title: "Success!",
-        description: "Result updated successfully",
-      });
-      router.push("/teacher/classroom");
-    },
-    onError: (error) => {
-      toast({
-        title: "Error",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
+  const updateResult = api.result.update.useMutation();
 
   // Handlers
   const handleSubjectChange = (
@@ -161,7 +125,7 @@ export default function ResultEntryPage() {
     }
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const validSubjects = subjects.filter(
       (s) => s.caScore > 0 || s.examScore > 0,
     );
@@ -177,8 +141,8 @@ export default function ResultEntryPage() {
 
     const resultData = {
       studentId,
-      term: "FIRST" as const,
-      session: "2024/2025",
+      term: classroomTerm!,
+      session: classroomSession!,
       timesSchoolOpened,
       timesPresent,
       timesAbsent: timesSchoolOpened - timesPresent,
@@ -188,13 +152,115 @@ export default function ResultEntryPage() {
       affectiveDomain,
     };
 
-    if (existingResult) {
-      updateResult.mutate({
-        id: existingResult.id,
-        ...resultData,
+    try {
+      if (existingResult) {
+        await updateResult.mutateAsync({
+          id: existingResult.id,
+          ...resultData,
+        });
+        toast({
+          title: "Success!",
+          description: "Result updated successfully",
+        });
+      } else {
+        await createResult.mutateAsync(resultData);
+        toast({ title: "Success!", description: "Result saved successfully" });
+      }
+      router.push("/teacher/classroom");
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error?.message ?? "Failed to save result",
+        variant: "destructive",
       });
-    } else {
-      createResult.mutate(resultData);
+    }
+  };
+
+  const handleSaveAndGeneratePdf = async () => {
+    const validSubjects = subjects.filter(
+      (s) => s.caScore > 0 || s.examScore > 0,
+    );
+
+    if (validSubjects.length === 0) {
+      toast({
+        title: "Error",
+        description: "Please enter scores for at least one subject",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const resultData = {
+      studentId,
+      term: classroomTerm!,
+      session: classroomSession!,
+      timesSchoolOpened,
+      timesPresent,
+      timesAbsent: timesSchoolOpened - timesPresent,
+      subjects: validSubjects,
+      teacherComment: teacherComment || undefined,
+      psychomotorRatings,
+      affectiveDomain,
+    };
+
+    try {
+      if (existingResult) {
+        await updateResult.mutateAsync({
+          id: existingResult.id,
+          ...resultData,
+        });
+      } else {
+        await createResult.mutateAsync(resultData);
+      }
+      const { data: latest } = await refetchExistingResult();
+      const full = latest ?? existingResult;
+      if (!full || !student) {
+        throw new Error("Failed to load result for PDF generation");
+      }
+      await generateReportCard({
+        student: {
+          firstName: student.firstName,
+          lastName: student.lastName,
+          otherNames: student.otherNames ?? null,
+          admissionNo: student.admissionNo,
+          gender: student.gender,
+          image: student.image ?? null,
+        },
+        classroom: {
+          name: student.classroom.name,
+          section: student.classroom.section ?? null,
+        },
+        term: full.term,
+        session: full.session,
+        timesSchoolOpened: full.timesSchoolOpened,
+        timesPresent: full.timesPresent,
+        timesAbsent: full.timesAbsent,
+        subjects: (full.subjects ?? []).map((s) => ({
+          subject: s.subject,
+          caScore: s.caScore,
+          examScore: s.examScore,
+          totalScore: s.totalScore,
+          grade: s.grade ?? "",
+          remark: s.remark ?? "",
+        })),
+        teacherComment: full.teacherComment ?? "",
+        principalComment: full.principalComment ?? "",
+        averageScore: full.averageScore,
+        classPosition: full.classPosition ?? null,
+        totalStudents: full.totalStudents ?? null,
+        psychomotorRatings: (full.psychomotorRatings as any) ?? undefined,
+        affectiveDomain: (full.affectiveDomain as any) ?? undefined,
+      });
+      toast({
+        title: "PDF Generated",
+        description: "Result saved and PDF downloaded",
+      });
+    } catch (error: any) {
+      toast({
+        title: "Error",
+        description: error?.message ?? "Failed to save and generate PDF",
+        variant: "destructive",
+      });
     }
   };
 
@@ -323,7 +389,7 @@ export default function ResultEntryPage() {
             )}
           </Button>
           <Button
-            onClick={handleSave}
+            onClick={handleSaveAndGeneratePdf}
             disabled={createResult.isPending || updateResult.isPending}
             className="h-14 flex-1 bg-green-600 text-lg font-semibold text-white hover:bg-green-700"
           >

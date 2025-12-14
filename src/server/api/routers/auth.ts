@@ -4,10 +4,9 @@
 
 import { TRPCError } from '@trpc/server';
 import { hash } from 'bcryptjs';
-import { randomUUID } from 'crypto';
 import { z } from 'zod';
 import { createTRPCRouter, publicProcedure, protectedProcedure, adminProcedure } from '../trpc';
-import { loginSchema, registerSchema } from '~/lib/utils/validation';
+import { registerSchema } from '~/lib/utils/validation';
 import { auth } from '~/server/better-auth';
 
 export const authRouter = createTRPCRouter({
@@ -93,6 +92,31 @@ export const authRouter = createTRPCRouter({
       return user;
     }),
 
+  listTeachers: adminProcedure.query(async ({ ctx }) => {
+    const users = await ctx.db.user.findMany({
+      where: { role: 'TEACHER', isActive: true },
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        role: true,
+        image: true,
+        phoneNumber: true,
+        classrooms: {
+          where: { isActive: true },
+          select: {
+            id: true,
+            name: true,
+            section: true,
+            session: true,
+          },
+        },
+      },
+      orderBy: [{ name: 'asc' }],
+    });
+    return users;
+  }),
+
   /**
    * Admin: create teacher user
    */
@@ -101,7 +125,6 @@ export const authRouter = createTRPCRouter({
       registerSchema.transform((v) => ({ ...v, role: 'TEACHER' as const })),
     )
     .mutation(async ({ ctx, input }) => {
-      const now = new Date();
       const existingUser = await ctx.db.user.findUnique({
         where: { email: input.email },
       });
@@ -136,6 +159,42 @@ export const authRouter = createTRPCRouter({
         },
       });
       return user;
+    }),
+  updateTeacher: adminProcedure
+    .input(
+      z.object({
+        id: z.number().int().positive(),
+        name: z.string().min(2).optional(),
+        email: z.string().email().optional(),
+        phoneNumber: z.string().optional(),
+        image: z.string().url().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { id, ...data } = input;
+      const user = await ctx.db.user.findUnique({
+        where: { id },
+        select: { role: true },
+      });
+      if (!user) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'User not found' });
+      }
+      if (user.role !== 'TEACHER') {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Not a teacher' });
+      }
+      const updated = await ctx.db.user.update({
+        where: { id },
+        data,
+        select: {
+          id: true,
+          email: true,
+          name: true,
+          role: true,
+          image: true,
+          phoneNumber: true,
+        },
+      });
+      return updated;
     }),
   /**
    * Admin: delete (deactivate) teacher

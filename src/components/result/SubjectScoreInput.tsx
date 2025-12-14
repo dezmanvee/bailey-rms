@@ -27,6 +27,11 @@ export function SubjectScoreInput({
   const [exam, setExam] = useState(examScore.toString());
   const [errors, setErrors] = useState({ ca: "", exam: "" });
 
+  useEffect(() => {
+    setCa(caScore.toString());
+    setExam(examScore.toString());
+  }, [caScore, examScore]);
+
   const total = Number(ca) + Number(exam);
   const { grade, remark } = calculateGrade(total);
 
