@@ -26,21 +26,21 @@ export function StatsCard({
   const variants = {
     primary: "bg-gradient-to-br from-red-50 to-red-100 border-red-200",
     success: "bg-gradient-to-br from-green-50 to-green-100 border-green-200",
-    warning: "bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200",
+    warning: "bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200",
     default: "bg-gradient-to-br from-gray-50 to-gray-100 border-gray-200",
   };
 
   const iconColors = {
     primary: "bg-red-900 text-white",
     success: "bg-green-600 text-white",
-    warning: "bg-orange-600 text-white",
+    warning: "bg-blue-600 text-white",
     default: "bg-gray-700 text-white",
   };
 
   const valueColors = {
     primary: "text-red-900",
     success: "text-green-900",
-    warning: "text-orange-900",
+    warning: "text-blue-900",
     default: "text-gray-900",
   };
 

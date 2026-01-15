@@ -21,31 +21,65 @@ export const authRouter = createTRPCRouter({
    * Get current user
    */
   getCurrentUser: protectedProcedure.query(async ({ ctx }) => {
-    const user = await ctx.db.user.findUnique({
-      where: { email: ctx.session.user.email },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        role: true,
-        image: true,
-        phoneNumber: true,
-        isActive: true,
-        classrooms: {
-          where: { isActive: true },
-          include: {
-            _count: {
-              select: { students: true },
-            },
+    const baseSelect = {
+      id: true,
+      email: true,
+      name: true,
+      role: true,
+      image: true,
+      phoneNumber: true,
+      isActive: true,
+      classrooms: {
+        where: { isActive: true },
+        include: {
+          _count: {
+            select: { students: true },
           },
         },
       },
+    } as const;
+
+    let user = await ctx.db.user.findUnique({
+      where: { email: ctx.session.user.email },
+      select: baseSelect,
     });
+
+    if (!user) {
+      try {
+        const passwordHash = await hash('better-auth-user', 10);
+        const name =
+          ctx.session.user.name ??
+          ctx.session.user.email.split('@')[0] ??
+          ctx.session.user.email;
+
+        user = await ctx.db.user.create({
+          data: {
+            email: ctx.session.user.email,
+            name,
+            password: passwordHash,
+            role: 'TEACHER',
+          },
+          select: baseSelect,
+        });
+      } catch {
+        user = await ctx.db.user.findUnique({
+          where: { email: ctx.session.user.email },
+          select: baseSelect,
+        });
+      }
+    }
 
     if (!user) {
       throw new TRPCError({
         code: 'NOT_FOUND',
         message: 'User not found',
+      });
+    }
+
+    if (!user.isActive) {
+      throw new TRPCError({
+        code: 'FORBIDDEN',
+        message: 'Your account is inactive',
       });
     }
 

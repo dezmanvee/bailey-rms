@@ -1,7 +1,7 @@
 "use client";
 
-import { Checkbox } from "~/components/ui/checkbox";
 import { Label } from "~/components/ui/label";
+import { cn } from "~/lib/utils";
 
 const affectiveTraits = [
   { key: "drawingPainting", label: "Drawing & Painting" },
@@ -13,37 +13,44 @@ const affectiveTraits = [
 ];
 
 interface AffectiveDomainSectionProps {
-  traits: Record<string, string>;
-  onChange: (traits: Record<string, string>) => void;
+  ratings: Record<string, number>;
+  onChange: (ratings: Record<string, number>) => void;
 }
 
 export function AffectiveDomainSection({
-  traits,
+  ratings,
   onChange,
 }: AffectiveDomainSectionProps) {
-  const handleTraitToggle = (key: string, checked: boolean) => {
-    onChange({ ...traits, [key]: checked ? "tick" : "" });
+  const handleRatingChange = (key: string, value: number) => {
+    onChange({ ...ratings, [key]: value });
   };
 
   return (
     <div className="rounded-xl border-2 border-gray-200 bg-white p-6">
       <h3 className="mb-4 text-lg font-semibold text-gray-900">
-        Affective Domain
+        Affective Domain (Rate 1-5)
       </h3>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         {affectiveTraits.map((trait) => (
-          <div key={trait.key} className="flex items-center gap-3">
-            <Checkbox
-              id={trait.key}
-              checked={traits[trait.key] === "tick"}
-              onCheckedChange={(checked) =>
-                handleTraitToggle(trait.key, checked as boolean)
-              }
-              className="border-2 border-red-900 data-[state=checked]:bg-red-900"
-            />
-            <Label htmlFor={trait.key} className="cursor-pointer text-gray-700">
-              {trait.label}
-            </Label>
+          <div key={trait.key}>
+            <Label className="mb-2 text-gray-700">{trait.label}</Label>
+            <div className="flex gap-2">
+              {[1, 2, 3, 4, 5].map((rating) => (
+                <button
+                  key={rating}
+                  type="button"
+                  onClick={() => handleRatingChange(trait.key, rating)}
+                  className={cn(
+                    "h-10 flex-1 rounded-lg border-2 font-semibold transition-all",
+                    ratings[trait.key] === rating
+                      ? "scale-110 border-red-900 bg-red-900 text-white"
+                      : "border-gray-300 bg-white text-gray-700 hover:border-red-900",
+                  )}
+                >
+                  {rating}
+                </button>
+              ))}
+            </div>
           </div>
         ))}
       </div>

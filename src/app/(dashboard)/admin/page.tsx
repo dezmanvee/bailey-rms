@@ -223,21 +223,21 @@ export default function AdminDashboardPage() {
       <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:mb-8 lg:grid-cols-4 lg:gap-6">
         <StatsCard
           title="Total Students"
-          value="156"
+          value="10"
           subtitle="Across all classrooms"
           icon={Users}
           variant="default"
         />
         <StatsCard
           title="Teachers"
-          value="12"
+          value="2"
           subtitle="Active teachers"
           icon={UserCircle}
           variant="primary"
         />
         <StatsCard
           title="Results Published"
-          value="142"
+          value="4"
           subtitle="This term"
           icon={FileText}
           variant="success"
@@ -247,7 +247,7 @@ export default function AdminDashboardPage() {
           value="72.5%"
           subtitle="School performance"
           icon={TrendingUp}
-          variant="default"
+          variant="warning"
         />
       </div>
 

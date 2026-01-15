@@ -140,7 +140,7 @@ export function StudentCard({ student, classroomId }: StudentCardProps) {
             </>
           ) : (
             <Link href={`/teacher/result/${student.id}`} className="flex-1">
-              <Button className="bg-gradient-oxblood shadow-oxblood w-full text-white hover:opacity-90">
+              <Button className="bg-crimson shadow-oxblood w-full text-white hover:opacity-90">
                 <FileText className="mr-2 h-4 w-4" />
                 Enter Result
               </Button>

@@ -1,5 +1,5 @@
 
-export const APP_NAME = "Bailey's Bowen College RMS";
+export const APP_NAME = "Hampton Preparatory School RMS";
 export const APP_DESCRIPTION = 'Result Management System';
 
 export const ROUTES = {

@@ -185,7 +185,7 @@ export default function StudentsPage() {
         </div>
         <Button
           onClick={handleCreate}
-          className="bg-gradient-oxblood text-white"
+          className="bg-crimson hover:opacity/90 text-white"
         >
           Create Student
         </Button>

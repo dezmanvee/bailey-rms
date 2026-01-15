@@ -86,7 +86,9 @@ export const createResultSchema = z.object({
   psychomotorRatings: z
     .record(z.string(), z.number().int().min(1).max(5))
     .optional(),
-  affectiveDomain: z.record(z.string(), z.string()).optional(),
+  affectiveDomain: z
+    .record(z.string(), z.number().int().min(1).max(5))
+    .optional(),
 });
 
 export const updateResultSchema = createResultSchema.partial().extend({

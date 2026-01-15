@@ -35,7 +35,7 @@ interface StudentResult {
   classPosition?: number | null;
   totalStudents?: number | null;
   psychomotorRatings?: Record<string, number>;
-  affectiveDomain?: Record<string, string>;
+  affectiveDomain?: Record<string, number>;
 }
 
 export async function generateReportCard(result: StudentResult): Promise<void> {
@@ -43,7 +43,7 @@ export async function generateReportCard(result: StudentResult): Promise<void> {
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
 
-  // Colors (Oxblood theme)
+
   const termLabelMap: Record<string, string> = {
     FIRST: 'First Term',
     SECOND: 'Second Term',
@@ -52,13 +52,55 @@ export async function generateReportCard(result: StudentResult): Promise<void> {
   const termLabel = termLabelMap[result.term] ?? result.term;
 
   doc.setTextColor(0, 0, 0);
+
+  const logoSize = 18;
+  const logoX = 10;
+  const logoY = 8;
+  let logoDrawn = false;
+  if (typeof window !== 'undefined') {
+    try {
+      const img = new Image();
+      await new Promise<void>((resolve, reject) => {
+        img.onload = () => resolve();
+        img.onerror = () => reject(new Error('Logo load failed'));
+        img.src = '/logo.jpg';
+      });
+      doc.addImage(img, 'JPEG', logoX, logoY, logoSize, logoSize);
+      logoDrawn = true;
+    } catch {
+      logoDrawn = false;
+    }
+  }
+  if (!logoDrawn) {
+    doc.setDrawColor(0, 0, 0);
+    doc.setLineWidth(0.3);
+    doc.rect(logoX, logoY, logoSize, logoSize);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    doc.text('HPS', logoX + logoSize / 2, logoY + logoSize / 2 + 3, {
+      align: 'center',
+    });
+  }
+
   doc.setFontSize(22);
   doc.setFont('helvetica', 'bold');
-  doc.text("BAILEY'S BOWEN COLLEGE", pageWidth / 2, 12, { align: 'center' });
+  doc.text('HAMPTON PREPARATORY SCHOOL', pageWidth / 2, 12, {
+    align: 'center',
+  });
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(9);
-  doc.text('No 14 Davis Cole Crescent, Pineville Estate, Surulere, Lagos State', pageWidth / 2, 17, { align: 'center' });
-  doc.text('TEL: 08115414915, 07034552256   Email: baileysbowencollege@gmail.com', pageWidth / 2, 22, { align: 'center' });
+  doc.text(
+    '18 Chris Madueke Street, Lekki, Phase 1',
+    pageWidth / 2,
+    17,
+    { align: 'center' },
+  );
+  doc.text(
+    'TEL: 08115414915, 07034552256   Email: info@hamptonpreparatoryschool.com',
+    pageWidth / 2,
+    22,
+    { align: 'center' },
+  );
   doc.setDrawColor(0, 0, 0);
   doc.setLineWidth(0.3);
   doc.line(10, 26, pageWidth - 10, 26);
@@ -70,11 +112,36 @@ export async function generateReportCard(result: StudentResult): Promise<void> {
   doc.text(`${termLabel.toUpperCase()} STUDENTS PERFORMANCE REPORT`, pageWidth / 2, yPos, { align: 'center' });
   
   yPos += 10;
+  const studentBoxTopY = yPos;
+  const passportWidth = 20;
+  const passportHeight = 18;
+  const passportX = pageWidth - 15 - passportWidth - 2;
+  const passportY = studentBoxTopY + 1;
   
   // Student Details Box
   doc.setDrawColor(0, 0, 0);
   doc.setLineWidth(0.5);
-  doc.rect(15, yPos, pageWidth - 30, 20);
+  doc.rect(15, studentBoxTopY, pageWidth - 30, 20);
+  doc.rect(passportX, passportY, passportWidth, passportHeight);
+  const initials =
+    `${result.student.firstName?.[0] ?? ''}${result.student.lastName?.[0] ?? ''}`.toUpperCase() ||
+    result.student.admissionNo.slice(0, 2).toUpperCase();
+  const drawPassportInitials = () => {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(12);
+    doc.text(initials, passportX + passportWidth / 2, passportY + passportHeight / 2 + 3, {
+      align: 'center',
+    });
+  };
+  if (result.student.image) {
+    try {
+      doc.addImage(result.student.image, 'JPEG', passportX + 0.5, passportY + 0.5, passportWidth - 1, passportHeight - 1);
+    } catch {
+      drawPassportInitials();
+    }
+  } else {
+    drawPassportInitials();
+  }
   
   yPos += 6;
   doc.setFontSize(10);
@@ -109,6 +176,7 @@ export async function generateReportCard(result: StudentResult): Promise<void> {
   const columnGap = 4;
   const rightX = pageWidth - marginRight - rightColumnWidth;
   const leftColWidth = rightX - marginLeft - columnGap;
+  let rightColumnBottomY = rightStartY;
   const subjectTableData = result.subjects.map((subject) => [
     subject.subject,
     subject.caScore.toFixed(0),
@@ -209,18 +277,21 @@ export async function generateReportCard(result: StudentResult): Promise<void> {
   rightY =
     ((doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ??
       rightY) + 4;
+  rightColumnBottomY = rightY;
 
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');
   doc.text('AFFECTIVE DOMAIN', rightX, rightY);
   rightY += 2;
   const affectiveData = result.affectiveDomain
-    ? Object.entries(result.affectiveDomain)
-        .map(([key, value]) => [key.replace(/([A-Z])/g, ' $1').trim(), value === 'tick' ? '✓' : ''])
+    ? Object.entries(result.affectiveDomain).map(([key, value]) => [
+        key.replace(/([A-Z])/g, ' $1').trim(),
+        value.toString(),
+      ])
     : [];
   autoTable(doc, {
     startY: rightY,
-    head: [['Trait', 'Mark']],
+    head: [['Trait', 'Rating']],
     body: affectiveData,
     theme: 'grid',
     headStyles: { fillColor: [230, 230, 230], textColor: [0, 0, 0], fontSize: 8 },
@@ -231,6 +302,7 @@ export async function generateReportCard(result: StudentResult): Promise<void> {
   });
   rightY =
     ((doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? rightY) + 4;
+  rightColumnBottomY = rightY;
   doc.setFont('helvetica', 'bold');
   doc.text('PSYCHOMOTOR DOMAIN', rightX, rightY);
   rightY += 2;
@@ -251,6 +323,36 @@ export async function generateReportCard(result: StudentResult): Promise<void> {
     margin: { left: rightX, right: 10 },
     columnStyles: { 0: { cellWidth: 45 }, 1: { cellWidth: 15 } },
   });
+  rightY =
+    ((doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ??
+      rightY) + 4;
+  rightColumnBottomY = rightY;
+
+  doc.setFont('helvetica', 'bold');
+  doc.text('RATING INDICES', rightX, rightY);
+  rightY += 2;
+  const ratingIndicesData = [
+    ['5', 'Excellent'],
+    ['4', 'Very Good'],
+    ['3', 'Good'],
+    ['2', 'Fair'],
+    ['1', 'Poor'],
+  ];
+  autoTable(doc, {
+    startY: rightY,
+    head: [['Index', 'Description']],
+    body: ratingIndicesData,
+    theme: 'grid',
+    headStyles: { fillColor: [230, 230, 230], textColor: [0, 0, 0], fontSize: 8 },
+    bodyStyles: { fontSize: 7 },
+    styles: { cellPadding: 1, lineWidth: 0.2 },
+    margin: { left: rightX, right: 10 },
+    columnStyles: { 0: { cellWidth: 15 }, 1: { cellWidth: 45 } },
+  });
+  rightY =
+    ((doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ??
+      rightY) + 4;
+  rightColumnBottomY = rightY;
 
   const gradeScaleStartY = yPos + 4;
   doc.setFont('helvetica', 'bold');
@@ -270,14 +372,32 @@ export async function generateReportCard(result: StudentResult): Promise<void> {
   const gradeScaleFinalY =
     ((doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? gradeScaleStartY) + 4;
   doc.setFont('helvetica', 'bold');
-  doc.text('BADGE ANALYSIS', marginLeft + 5, gradeScaleFinalY);
+  doc.text('GRADE ANALYSIS', marginLeft + 5, gradeScaleFinalY);
+  const gradeAnalysisHead = ['A', 'B', 'C', 'D', 'E', 'F'];
+  const gradeAnalysisRow = ['Excellent', 'Very Good', 'Good', 'Fair', 'Weak', 'Poor'];
+  autoTable(doc, {
+    startY: gradeScaleFinalY + 2,
+    head: [gradeAnalysisHead],
+    body: [gradeAnalysisRow],
+    theme: 'grid',
+    headStyles: { fillColor: [230, 230, 230], textColor: [0, 0, 0], fontSize: 8 },
+    bodyStyles: { fontSize: 7 },
+    styles: { cellPadding: 1, lineWidth: 0.2 },
+    margin: { left: marginLeft, right: marginRight + rightColumnWidth + columnGap },
+    tableWidth: leftColWidth,
+  });
+  const gradeAnalysisFinalY =
+    ((doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ??
+      gradeScaleFinalY) + 4;
+  doc.setFont('helvetica', 'bold');
+  doc.text('BADGE ANALYSIS', marginLeft + 5, gradeAnalysisFinalY);
   const gradeCounts: Record<string, number> = { A: 0, B: 0, C: 0, D: 0, E: 0, F: 0 };
   result.subjects.forEach((s) => {
     const g = (s.grade || '').trim().charAt(0).toUpperCase();
     if (gradeCounts[g] !== undefined) gradeCounts[g]++;
   });
   autoTable(doc, {
-    startY: gradeScaleFinalY + 2,
+    startY: gradeAnalysisFinalY + 2,
     head: [['A', 'B', 'C', 'D', 'E', 'F', 'TOTAL SUBJECTS OFFERED']],
     body: [[
       gradeCounts.A,
@@ -296,11 +416,11 @@ export async function generateReportCard(result: StudentResult): Promise<void> {
     tableWidth: leftColWidth,
   });
   yPos =
-    ((doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? gradeScaleFinalY) + 6;
+    ((doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ??
+      gradeAnalysisFinalY) + 6;
 
   // Comments (start after whichever column is longer)
-  const commentsStartY =
-    Math.max(yPos, (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? yPos) + 6;
+  const commentsStartY = Math.max(yPos, rightColumnBottomY) + 6;
   yPos = commentsStartY;
   doc.setFontSize(10);
   doc.setFont('helvetica', 'bold');

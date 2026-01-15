@@ -205,13 +205,13 @@ export default function TeachersPage() {
         <Button
           onClick={handleCreate}
           disabled={creating}
-          className="bg-gradient-oxblood text-white"
+          className="gradient-crimson hover:bg-crimson text-white"
         >
           Create Teacher & Classroom
         </Button>
       </div>
 
-      <div className="rounded-2xl border-2 border-gray-200 bg-white p-6">
+      <div className="rounded-2xl border-2 border-gray-200 bg-white p-6 lg:col-span-2">
         <div className="mb-6 flex items-center gap-3">
           <Users className="h-6 w-6 text-gray-500" />
           <h3 className="text-lg font-semibold text-gray-900">Teachers</h3>

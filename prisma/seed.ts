@@ -38,10 +38,10 @@ async function main() {
   console.log('🏫 Creating school settings...');
   await prisma.schoolSettings.create({
     data: {
-      schoolName: "Bailey's Bowen College",
-      schoolAddress: "No 14 Davis Cole Crescent, Pineville Estate, Surulere, Lagos State",
+      schoolName: "Hampton Preparatory School",
+      schoolAddress: "18 Chris Madueke Street, Lekki, Phase 1",
       schoolPhone: "08115414915, 07034552256",
-      schoolEmail: "baileysbowencollege@gmail.com",
+      schoolEmail: "info@hamptonpreparatoryschool.com",
       currentSession: "2024/2025",
       currentTerm: Term.FIRST,
       nextTermBegins: new Date('2025-01-20'),
@@ -70,25 +70,20 @@ async function main() {
   console.log('📚 Creating subjects...');
   await prisma.subject.createMany({
     data: [
-      { name: 'ENGLISH LANGUAGE', code: 'ENG', caMaxScore: 40, examMaxScore: 60 },
       { name: 'MATHEMATICS', code: 'MTH', caMaxScore: 40, examMaxScore: 60 },
-      { name: 'AGRICULTURAL SCIENCE', code: 'AGR', caMaxScore: 40, examMaxScore: 60 },
-      { name: 'BIOLOGY', code: 'BIO', caMaxScore: 40, examMaxScore: 60 },
-      { name: 'CATERING CRAFTS', code: 'CAT', caMaxScore: 40, examMaxScore: 60 },
-      { name: 'CHEMISTRY', code: 'CHE', caMaxScore: 40, examMaxScore: 60 },
-      { name: 'CIVIC EDUCATION', code: 'CIV', caMaxScore: 40, examMaxScore: 60 },
-      { name: 'COMPUTER', code: 'COM', caMaxScore: 40, examMaxScore: 60 },
-      { name: 'DATA PROCESSING', code: 'DTP', caMaxScore: 40, examMaxScore: 60 },
-      { name: 'ECONOMICS', code: 'ECO', caMaxScore: 40, examMaxScore: 60 },
-      { name: 'ELECTRICAL INSTALLATION & MAINTENANCE', code: 'ELM', caMaxScore: 40, examMaxScore: 60 },
-      { name: 'FINANCIAL ACCOUNTING', code: 'ACC', caMaxScore: 40, examMaxScore: 60 },
-      { name: 'FOOD & NUTRITION', code: 'FNU', caMaxScore: 40, examMaxScore: 60 },
-      { name: 'FURTHER MATHEMATICS', code: 'FMT', caMaxScore: 40, examMaxScore: 60 },
-      { name: 'GOVERNMENT', code: 'GOV', caMaxScore: 40, examMaxScore: 60 },
-      { name: 'LITERATURE IN ENGLISH', code: 'LIT', caMaxScore: 40, examMaxScore: 60 },
+      { name: 'ENGLISH LANGUAGE', code: 'ENG', caMaxScore: 40, examMaxScore: 60 },
       { name: 'PHYSICS', code: 'PHY', caMaxScore: 40, examMaxScore: 60 },
-      { name: 'TECHNICAL DRAWING', code: 'TCD', caMaxScore: 40, examMaxScore: 60 },
-      { name: 'YORUBA', code: 'YOR', caMaxScore: 40, examMaxScore: 60 },
+      { name: 'CHEMISTRY', code: 'CHE', caMaxScore: 40, examMaxScore: 60 },
+      { name: 'BIOLOGY', code: 'BIO', caMaxScore: 40, examMaxScore: 60 },
+      { name: 'GLOBAL PERSPECTIVE', code: 'GLP', caMaxScore: 40, examMaxScore: 60 },
+      { name: 'CIVIC EDUCATION', code: 'CIV', caMaxScore: 40, examMaxScore: 60 },
+      { name: 'GEOGRAPHY', code: 'GEO', caMaxScore: 40, examMaxScore: 60 },
+      { name: 'RELIGIOUS EDUCATION', code: 'RED', caMaxScore: 40, examMaxScore: 60 },
+      { name: 'PHSE', code: 'PSE', caMaxScore: 40, examMaxScore: 60 },
+      { name: 'PHYSICAL EDUCATION', code: 'PHE', caMaxScore: 40, examMaxScore: 60 },
+      { name: 'DESIGN TECHNOLOGY', code: 'DST', caMaxScore: 40, examMaxScore: 60 },
+      { name: 'ART', code: 'ART', caMaxScore: 40, examMaxScore: 60 },
+      { name: 'HOME MANAGEMENT', code: 'HOM', caMaxScore: 40, examMaxScore: 60 },
     ],
   });
 
@@ -100,7 +95,7 @@ async function main() {
 
   const admin = await prisma.user.create({
     data: {
-      email: 'admin@baileybowen.edu',
+      email: 'admin@hamptonpreparatoryschool.com',
       name: 'MR OWOLABI BADMOS',
       password: passwordHash,
       role: Role.ADMIN,
@@ -117,7 +112,7 @@ async function main() {
 
   const teacher1 = await prisma.user.create({
     data: {
-      email: 'adigun@baileybowen.edu',
+      email: 'adigun@hamptonpreparatoryschool.com',
       name: 'MR ADIGUN TIMILEYIN',
       password: passwordHash,
       role: Role.TEACHER,
@@ -134,7 +129,7 @@ async function main() {
 
   const teacher2 = await prisma.user.create({
     data: {
-      email: 'jane.smith@baileybowen.edu',
+      email: 'jane.smith@hamptonpreparatoryschool.com',
       name: 'MRS JANE SMITH',
       password: passwordHash,
       role: Role.TEACHER,
@@ -323,12 +318,12 @@ async function main() {
         relationshipWithOthers: 5,
       },
       affectiveDomain: {
-        drawingPainting: 'tick',
-        craftPractice: 'tick',
-        musicalSkills: 'tick',
-        sportGames: 'tick',
-        speechFluency: 'tick',
-        attentiveness: 'tick',
+        drawingPainting: 5,
+        craftPractice: 5,
+        musicalSkills: 5,
+        sportGames: 5,
+        speechFluency: 5,
+        attentiveness: 5,
       },
       subjects: {
         create: [
@@ -357,13 +352,13 @@ async function main() {
   console.log(`   - Classrooms created: 2`);
   console.log(`   - Students created: ${students.length}`);
   console.log(`   - Results created: 1 (Esther's report)`);
-  console.log(`   - Subjects configured: 19`);
+  console.log(`   - Subjects configured: 14`);
   console.log(`   - Grade scales: 6`);
   
   console.log('\n🔑 Login Credentials:');
-  console.log('   Admin:     admin@baileybowen.edu / password123');
-  console.log('   Teacher 1: adigun@baileybowen.edu / password123');
-  console.log('   Teacher 2: jane.smith@baileybowen.edu / password123');
+  console.log('   Admin:     admin@hamptonpreparatoryschool.com / password123');
+  console.log('   Teacher 1: adigun@hamptonpreparatoryschool.com / password123');
+  console.log('   Teacher 2: jane.smith@hamptonpreparatoryschool.com / password123');
   
   console.log('\n🚀 Next steps:');
   console.log('   1. Run: bun run dev');

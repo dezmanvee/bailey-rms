@@ -137,7 +137,7 @@ CREATE TABLE "grade_scales" (
 -- CreateTable
 CREATE TABLE "school_settings" (
     "id" SERIAL NOT NULL,
-    "schoolName" TEXT NOT NULL DEFAULT 'Bailey''s Bowen College',
+    "schoolName" TEXT NOT NULL DEFAULT 'Hampton Preparatory School',
     "schoolAddress" TEXT,
     "schoolPhone" TEXT,
     "schoolEmail" TEXT,

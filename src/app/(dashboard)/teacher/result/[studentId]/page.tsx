@@ -36,7 +36,7 @@ export default function ResultEntryPage() {
     Record<string, number>
   >({});
   const [affectiveDomain, setAffectiveDomain] = useState<
-    Record<string, string>
+    Record<string, number>
   >({});
 
   // Queries
@@ -348,9 +348,8 @@ export default function ResultEntryPage() {
           onChange={setPsychomotorRatings}
         />
 
-        {/* Affective Domain */}
         <AffectiveDomainSection
-          traits={affectiveDomain}
+          ratings={affectiveDomain}
           onChange={setAffectiveDomain}
         />
 
@@ -374,7 +373,7 @@ export default function ResultEntryPage() {
           <Button
             onClick={handleSave}
             disabled={createResult.isPending || updateResult.isPending}
-            className="bg-gradient-oxblood shadow-oxblood h-14 flex-1 text-lg font-semibold text-white hover:opacity-90"
+            className="h-14 flex-1 bg-blue-400 text-lg font-semibold text-white hover:bg-blue-600 hover:opacity-90"
           >
             {createResult.isPending || updateResult.isPending ? (
               <>
