@@ -1,4 +1,4 @@
-import { type User, type Role, type Gender, type Term, type Grade } from "@prisma/client";
+import { type User, type Role, type Gender, type Term, type Grade } from "../../generated/prisma/browser";
 
 export type { User, Role, Gender, Term, Grade };
 
