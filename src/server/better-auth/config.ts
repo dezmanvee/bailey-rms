@@ -11,6 +11,12 @@ const appBaseURL =
     ? process.env.BETTER_AUTH_URL
     : undefined);
 
+const trustedOrigins = [
+  "http://localhost:3000",
+  "https://rmshamptonpreparatoryschool.vercel.app",
+  appBaseURL,
+].filter(Boolean) as string[];
+
 export const auth = betterAuth({
   database: prismaAdapter(db, {
     provider: "postgresql",
@@ -18,6 +24,7 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
   },
+  trustedOrigins,
   user: { modelName: "AuthUser" },
   account: { modelName: "AuthAccount" },
   verification: { modelName: "AuthVerification" },
