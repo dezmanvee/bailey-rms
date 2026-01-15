@@ -3,6 +3,14 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { env } from "~/env";
 import { db } from "~/server/db";
 
+const appBaseURL =
+  (typeof process.env.NEXT_PUBLIC_APP_URL === "string"
+    ? process.env.NEXT_PUBLIC_APP_URL
+    : undefined) ??
+  (typeof process.env.BETTER_AUTH_URL === "string"
+    ? process.env.BETTER_AUTH_URL
+    : undefined);
+
 export const auth = betterAuth({
   database: prismaAdapter(db, {
     provider: "postgresql",
@@ -26,14 +34,7 @@ export const auth = betterAuth({
   //   generateId: false, // We use auto-increment IDs
   // },
   secret: env.BETTER_AUTH_SECRET!,
-  baseURL:
-    (typeof process.env.NEXT_PUBLIC_APP_URL === "string"
-      ? process.env.NEXT_PUBLIC_APP_URL
-      : undefined) ??
-    (typeof process.env.BETTER_AUTH_URL === "string"
-      ? process.env.BETTER_AUTH_URL
-      : undefined) ??
-    `http://localhost:${process.env.PORT ?? 3000}`,
+  ...(appBaseURL ? { baseURL: appBaseURL } : {}),
   // socialProviders: {
   //   github: {
   //     clientId: env.BETTER_AUTH_GITHUB_CLIENT_ID,
