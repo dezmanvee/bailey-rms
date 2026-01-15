@@ -96,7 +96,7 @@ async function main() {
   const admin = await prisma.user.create({
     data: {
       email: 'admin@hamptonpreparatoryschool.com',
-      name: 'MR OWOLABI BADMOS',
+      name: 'MR MOMO',
       password: passwordHash,
       role: Role.ADMIN,
       phoneNumber: '08115414915',
@@ -113,7 +113,7 @@ async function main() {
   const teacher1 = await prisma.user.create({
     data: {
       email: 'adigun@hamptonpreparatoryschool.com',
-      name: 'MR ADIGUN TIMILEYIN',
+      name: 'MR FRANCIS ZANO',
       password: passwordHash,
       role: Role.TEACHER,
       phoneNumber: '08012345678',
@@ -130,7 +130,7 @@ async function main() {
   const teacher2 = await prisma.user.create({
     data: {
       email: 'jane.smith@hamptonpreparatoryschool.com',
-      name: 'MRS JANE SMITH',
+      name: 'MRS ALBERT',
       password: passwordHash,
       role: Role.TEACHER,
       phoneNumber: '08098765432',
